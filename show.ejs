@@ -1,0 +1,81 @@
+
+  <% layout("/layouts/boilerplate") %>
+  <body>
+    <div class="row">
+      <div class="col-8 offset-2 show-card">
+    <h3><b> <i><%= listing.title %></i></b></h3>
+  </div>
+    <div class="card col-6 offset-3">
+      <img src="<%= listing.image %>" class="card-img-top show-img" alt="listing_image">
+  <div class="card-body">
+    <p class="card-text">
+      <!-- <b><%= listing.title %></b><br> -->
+      <%= listing.description %> <br>
+      &#8377; <%= listing.price %> <br>
+      <%= listing.location %> <br>
+      <%= listing.country %> <br>
+      
+      
+      </p>
+  </div>
+</div>
+</div>
+   
+    <div class="btns">
+    <a href="/listings/<%= listing._id %>/edit" class="btn btn-dark col-1 offset-4 add-btn">Edit</a>
+  
+  
+    <form method="POST" action="/listings/<%=listing._id%>?_method=DELETE">
+      <button class="btn btn-dark offset-3  ">Delete</button>
+    </form>
+  </div>
+
+  <div class="col-8 offset-3 mb-3">
+    <hr>
+    <h4>
+      Leave a FeedBack
+    </h4>
+    <form action="/listings/<%= listing._id %>" method="POST" name="reviews[rating]">
+      <div class="mb-3 mt-3">
+        <label for="rating" class="form-label">Rating</label>
+        <input type="range" 
+        min="1" 
+        max="5" 
+        id="rating" 
+        name="reviews[rating]"
+        class="form-range">
+        
+      </div>
+      <div class="mb-3 mt-3">
+        <label for="comment" class="form-label">Comment</label>
+        <textarea name="reviews[comment]" 
+        id="comment" 
+        cols="30" 
+        rows="5"
+        class="form-control"
+        required>
+      </textarea>
+        
+      </div>
+      <button class="btn btn-outline-dark">Submit</button>
+    </form>
+<!-- ------------------------------------------------------------------------ -->
+    <!-- <hr>
+    <h4><i>All Reviews</i></h4>
+    <ul>
+      <%for(review of listing.reviews){ %>
+        <li> <%= review.comment %>, <%= review.rating %> </li>
+        <% } %>
+      
+    </ul> -->
+    
+  </div>
+
+
+
+
+</div>
+
+<!-- <script src="/public/js/script.js"></script> -->
+  </body>
+<!-- </html> -->
