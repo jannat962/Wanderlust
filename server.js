@@ -15,9 +15,19 @@
 // Import necessary modules
 const express = require('express');
 const jwt = require('jsonwebtoken');
+const path = require('path');
 
 // Create an instance of Express
 const app = express();
+
+// Middleware
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Set view engine to EJS
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname));
 
 // Secret key for JWT
 const secretKey = 'yourSecretKey'; // Replace 'yourSecretKey' with your own secret key
@@ -36,7 +46,12 @@ const users = [
     }
 ];
 
-// Login endpoint
+// Home route
+app.get('/', (req, res) => {
+    res.render('index');
+});
+
+// Login route
 app.post('/login', (req, res) => {
     // Dummy authentication logic (replace this with your actual authentication logic)
     const { username, password } = req.body;

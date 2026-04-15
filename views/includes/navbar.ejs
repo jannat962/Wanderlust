@@ -1,0 +1,38 @@
+<nav class="navbar navbar-expand-md">
+    <div class="container">
+      <a class="navbar-brand" href="/listings"><i class="fa-solid fa-hotel me-2"></i>Wanderlust</a>
+      
+      <!-- Voice Assistant Controls -->
+      <div class="d-flex align-items-center ms-auto me-3 order-md-2">
+        <button id="start" class="btn btn-outline-primary btn-sm rounded-pill px-3 me-2">
+          <i class="fa-solid fa-microphone me-1"></i> Start Voice
+        </button>
+        <button id="stop" class="btn btn-outline-danger btn-sm rounded-pill px-3 d-none">
+          <i class="fa-solid fa-microphone-slash me-1"></i> Stop
+        </button>
+        <span id="voice-status" class="badge bg-secondary d-none">Listening...</span>
+      </div>
+
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      
+      <div class="collapse navbar-collapse order-md-1" id="navbarNav">
+        <div class="navbar-nav">
+          <a class="nav-link" href="/listings">Home</a>
+          <a class="nav-link" href="/listings">All Listings</a>
+          <a class="nav-link" href="/listings/new">Add New Property</a> 
+        </div>
+        <div class="navbar-nav ms-auto">
+          <% if(!currUser) { %>
+            <a class="nav-link" href="/signup">Sign Up</a>
+            <a class="nav-link" href="/login">Login</a>
+          <% } %>
+          <% if(currUser) { %>
+            <a class="nav-link text-primary" href="#">Hi, <%= currUser.username %></a>
+            <a class="nav-link" href="/logout">Logout</a>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </nav>

@@ -1,0 +1,142 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+:root {
+    --primary: #e94560;
+    --secondary: #0f3460;
+    --navy: #1a1a2e;
+    --slate: #16213e;
+    --light: #f8f9fa;
+    --gray: #adb5bd;
+}
+
+body {
+    font-family: 'Outfit', sans-serif;
+    background-color: var(--navy);
+    color: var(--light);
+    margin: 0;
+    padding-top: 5rem;
+    min-height: 100vh;
+}
+
+/* Navbar */
+.navbar {
+    background: rgba(22, 33, 62, 0.8) !important;
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    height: 5rem;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+}
+
+.navbar-brand {
+    font-weight: 700;
+    font-size: 1.5rem;
+    color: var(--primary) !important;
+}
+
+.nav-link {
+    color: var(--light) !important;
+    font-weight: 500;
+    transition: 0.3s;
+    margin: 0 0.5rem;
+}
+
+.nav-link:hover {
+    color: var(--primary) !important;
+}
+
+/* Cards */
+.listing-card {
+    background: var(--slate);
+    border: none;
+    border-radius: 20px;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    height: 100%;
+    margin-bottom: 2rem;
+}
+
+.listing-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+.card-img-top {
+    height: 250px;
+    object-fit: cover;
+    transition: 0.5s;
+}
+
+.listing-card:hover .card-img-top {
+    filter: brightness(0.8);
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+.card-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.card-text {
+    color: var(--gray);
+    font-size: 0.9rem;
+}
+
+.price {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+/* Footer */
+footer {
+    background: var(--slate);
+    padding: 3rem 0;
+    text-align: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.footer-links a {
+    color: var(--gray);
+    text-decoration: none;
+    margin: 0 1rem;
+    transition: 0.3s;
+}
+
+.footer-links a:hover {
+    color: var(--primary);
+}
+
+/* Buttons */
+.btn-primary {
+    background-color: var(--primary);
+    border: none;
+    border-radius: 10px;
+    padding: 0.6rem 1.5rem;
+    font-weight: 600;
+    transition: 0.3s;
+}
+
+.btn-primary:hover {
+    background-color: #ff4d6d;
+    transform: scale(1.05);
+}
+
+/* Utilities */
+.section-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 3rem;
+    text-align: center;
+}
+
+a.listing-link {
+    text-decoration: none;
+    color: inherit;
+}

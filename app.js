@@ -1,22 +1,22 @@
 const express = require("express");
 const app = express();
 const mongoose = require("mongoose");
-const Listing = require("./models/listing.js");
+const Listing = require("./listing.js");
 const path = require("path");
 const methodOverride = require("method-override");
 const ejsMate = require("ejs-mate");
-const wrapAsync = require("./utils/wrapAsync.js");
-const ExpressError = require("./utils/ExpressError.js");
+const wrapAsync = require("./wrapAsync.js");
+const ExpressError = require("./ExpressError.js");
 const { error } = require("console");
 const {listingschema, reviewschema} = require("./schema.js");
 const { listenerCount } = require("process");
-const Review = require("./models/review.js");
+const Review = require("./review.js");
 const { statSync } = require("fs");
 const session = require("express-session");
-//const {r} = require("./models/review.js");
-// const passport = require("passport-local");
-// const localStrategy = require("passport-local");
-const User = require("./models/user.js");
+const flash = require("connect-flash");
+const passport = require("passport");
+const LocalStrategy = require("passport-local");
+const User = require("./user.js");
 
 
 
@@ -35,7 +35,7 @@ main()
     console.log("connected to DB");
   })
   .catch((err) => {
-    console.log(err);
+    console.log("DB connection error:", err.message);
   });
 
 async function main() {
@@ -49,8 +49,36 @@ app.use(methodOverride("_method"));
 app.engine('ejs', ejsMate);
 app.use(express.static(path.join(__dirname, "/public")));
 
+const sessionOptions = {
+    secret: "mysupersecretcode",
+    resave: false,
+    saveUninitialized: true,
+    cookie: {
+        expires: Date.now() + 7 * 24 * 60 * 60 * 1000,
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+        httpOnly: true,
+    },
+};
+
 app.get("/", (req, res) => {
-  res.send("Hi, I am root");
+  res.redirect("/listings");
+});
+
+app.use(session(sessionOptions));
+app.use(flash());
+
+app.use(passport.initialize());
+app.use(passport.session());
+passport.use(new LocalStrategy(User.authenticate()));
+
+passport.serializeUser(User.serializeUser());
+passport.deserializeUser(User.deserializeUser());
+
+app.use((req, res, next) => {
+    res.locals.success = req.flash("success");
+    res.locals.error = req.flash("error");
+    res.locals.currUser = req.user;
+    next();
 });
 //  Listing_validate
 const validateListing = (req, res, next) =>{
@@ -61,6 +89,14 @@ const validateListing = (req, res, next) =>{
   } else {
     next();
   }
+};
+
+const isLoggedIn = (req, res, next) => {
+    if (!req.isAuthenticated()) {
+        req.flash("error", "You must be logged in to perform this action!");
+        return res.redirect("/login");
+    }
+    next();
 };
 
 
@@ -89,26 +125,27 @@ app.get("/listings", wrapAsync(async (req, res) => {
   const allListings = await Listing.find({});
   // res.render("listings/index.ejs", {allListings});
 
-  res.render("c:\\Users\\HP\\Desktop\\project\\NewProject\\views\\listings\\index.ejs", { allListings });
+  res.render("listings/index.ejs", { allListings });
 })
 );
 
 //New Route
-app.get("/listings/new", (req, res) => {
-  res.render("c:\\Users\\HP\\Desktop\\project\\NewProject\\views\\listings\\new.ejs");
+app.get("/listings/new", isLoggedIn, (req, res) => {
+  res.render("listings/new.ejs");
 });
 
 //Show Route
 app.get("/listings/:id", (async (req, res) => {
   let { id } = req.params;
   const listing = await Listing.findById(id).populate("reviews");
-  res.render("c:\\Users\\HP\\Desktop\\project\\NewProject\\views\\listings\\show.ejs", { listing });
+  res.render("listings/show.ejs", { listing });
 }));
 //c:\\Users\\HP\\Desktop\\project\\NewProject\\views\\listings\\index.ejs
 
 
 //Create Route
 app.post("/listings",
+isLoggedIn,
 (async (req, res) => {
   const newListing = new Listing(req.body.listing);
   await newListing.save();
@@ -129,7 +166,7 @@ app.post("/listings",
 app.get("/listings/:id/edit", (async (req, res) => {
   let { id } = req.params;
   const listing = await Listing.findById(id);
-  res.render("c:\\Users\\HP\\Desktop\\project\\NewProject\\views\\listings\\edit.ejs", { listing });
+  res.render("listings/edit.ejs", { listing });
 }));
 
 //Update Route
@@ -140,7 +177,7 @@ app.put("/listings/:id", (async (req, res) => {
 }));
 
 //Delete Route
-app.delete("/listings/:id", (async (req, res) => {
+app.delete("/listings/:id", isLoggedIn, (async (req, res) => {
   let { id } = req.params;
   let deletedListing = await Listing.findByIdAndDelete(id);
   console.log(deletedListing);
@@ -154,7 +191,7 @@ app.delete("/listings/:id", (async (req, res) => {
 app.post("/listings/:id", async(req, res)=>{
   let {id} = req.params;
   let reviewsListing = await Listing.findById(id);
-  const newReview = new Review(req.body.listing);
+  const newReview = new Review(req.body.review);
   await newReview.save();
   res.redirect("/listings")
   //let newReview = new Review (req.body.review);
@@ -246,3 +283,47 @@ app.post("/listings/:id", async(req, res)=>{
 app.listen(8080, () => {
   console.log("server is listening to port 8080");
 });
+
+// Authentication Routes
+// Signup
+app.get("/signup", (req, res) => {
+    res.render("users/signup.ejs");
+});
+
+app.post("/signup", wrapAsync(async (req, res) => {
+    try {
+        let { username, email, password } = req.body;
+        const newUser = new User({ email, username });
+        const registeredUser = await User.register(newUser, password);
+        req.login(registeredUser, (err) => {
+            if (err) return next(err);
+            req.flash("success", "Welcome to Wanderlust!");
+            res.redirect("/listings");
+        });
+    } catch (e) {
+        req.flash("error", e.message);
+        res.redirect("/signup");
+    }
+}));
+
+// Login
+app.get("/login", (req, res) => {
+    res.render("users/login.ejs");
+});
+
+app.post("/login", passport.authenticate("local", {
+    failureRedirect: "/login",
+    failureFlash: true,
+}), async (req, res) => {
+    req.flash("success", "Welcome back to Wanderlust!");
+    res.redirect("/listings");
+});
+
+// Logout
+app.get("/logout", (req, res, next) => {
+    req.logout((err) => {
+        if (err) return next(err);
+        req.flash("success", "You are logged out!");
+        res.redirect("/listings");
+    });
+});
