@@ -28,7 +28,7 @@ const User = require("./user.js");
 
 
 
-const MONGO_URL = "mongodb://127.0.0.1:27017/wanderlust";
+const dbUrl = process.env.ATLASDB_URL || "mongodb://127.0.0.1:27017/wanderlust";
 
 main()
   .then(() => {
@@ -39,7 +39,7 @@ main()
   });
 
 async function main() {
-  await mongoose.connect(MONGO_URL);
+  await mongoose.connect(dbUrl);
 }
 
 app.set("view engine", "ejs");
@@ -50,7 +50,7 @@ app.engine('ejs', ejsMate);
 app.use(express.static(path.join(__dirname, "/public")));
 
 const sessionOptions = {
-    secret: "mysupersecretcode",
+    secret: process.env.SECRET || "mysupersecretcode",
     resave: false,
     saveUninitialized: true,
     cookie: {
@@ -280,9 +280,12 @@ app.post("/listings/:id", async(req, res)=>{
 
 // -------------------------------
 
-app.listen(8080, () => {
-  console.log("server is listening to port 8080");
+const port = process.env.PORT || 8080;
+app.listen(port, () => {
+  console.log(`server is listening to port ${port}`);
 });
+
+module.exports = app;
 
 // Authentication Routes
 // Signup
