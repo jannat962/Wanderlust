@@ -346,10 +346,12 @@ wrapAsync(async (req, res) => {
 
 // -------------------------------
 
-const port = process.env.PORT || 8080;
-app.listen(port, () => {
-  console.log(`server is listening to port ${port}`);
-});
+if (process.env.NODE_ENV !== "test") {
+  const port = process.env.PORT || 8080;
+  app.listen(port, () => {
+    console.log(`server is listening to port ${port}`);
+  });
+}
 
 module.exports = app;
 
