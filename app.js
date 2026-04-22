@@ -13,6 +13,7 @@ const { listenerCount } = require("process");
 const Review = require("./review.js");
 const { statSync } = require("fs");
 const session = require("express-session");
+const { MongoStore } = require("connect-mongo");
 const flash = require("connect-flash");
 const passport = require("passport");
 const LocalStrategy = require("passport-local");
@@ -49,7 +50,20 @@ app.use(methodOverride("_method"));
 app.engine('ejs', ejsMate);
 app.use(express.static(path.join(__dirname, "/public")));
 
+const store = MongoStore.create({
+    mongoUrl: dbUrl,
+    crypto: {
+        secret: process.env.SECRET || "mysupersecretcode",
+    },
+    touchAfter: 24 * 3600,
+});
+
+store.on("error", (err) => {
+    console.log("ERROR in MONGO SESSION STORE", err);
+});
+
 const sessionOptions = {
+    store,
     secret: process.env.SECRET || "mysupersecretcode",
     resave: false,
     saveUninitialized: true,
@@ -99,6 +113,26 @@ const isLoggedIn = (req, res, next) => {
     next();
 };
 
+const isOwner = wrapAsync(async (req, res, next) => {
+    let { id } = req.params;
+    let listing = await Listing.findById(id);
+    if (!listing.owner.equals(res.locals.currUser._id)) {
+        req.flash("error", "You are not the owner of this listing");
+        return res.redirect(`/listings/${id}`);
+    }
+    next();
+});
+
+const isReviewAuthor = wrapAsync(async (req, res, next) => {
+    let { id, reviewId } = req.params;
+    let review = await Review.findById(reviewId);
+    if (!review.author.equals(res.locals.currUser._id)) {
+        req.flash("error", "You are not the author of this review");
+        return res.redirect(`/listings/${id}`);
+    }
+    next();
+});
+
 
 
 
@@ -122,12 +156,16 @@ const validateReview = (req, res, next) =>{
 // });
 
 app.get("/listings", wrapAsync(async (req, res) => {
-  const allListings = await Listing.find({});
-  // res.render("listings/index.ejs", {allListings});
-
+  const allListings = await Listing.find({}).populate("owner");
   res.render("listings/index.ejs", { allListings });
 })
 );
+
+//Dashboard Route
+app.get("/dashboard", isLoggedIn, wrapAsync(async (req, res) => {
+    const allListings = await Listing.find({ owner: req.user._id });
+    res.render("listings/dashboard.ejs", { allListings });
+}));
 
 //New Route
 app.get("/listings/new", isLoggedIn, (req, res) => {
@@ -135,9 +173,20 @@ app.get("/listings/new", isLoggedIn, (req, res) => {
 });
 
 //Show Route
-app.get("/listings/:id", (async (req, res) => {
+app.get("/listings/:id", wrapAsync(async (req, res) => {
   let { id } = req.params;
-  const listing = await Listing.findById(id).populate("reviews");
+  const listing = await Listing.findById(id)
+    .populate({
+        path: "reviews",
+        populate: {
+            path: "author",
+        },
+    })
+    .populate("owner");
+  if (!listing) {
+    req.flash("error", "Listing you requested for does not exist!");
+    res.redirect("/listings");
+  }
   res.render("listings/show.ejs", { listing });
 }));
 //c:\\Users\\HP\\Desktop\\project\\NewProject\\views\\listings\\index.ejs
@@ -146,11 +195,13 @@ app.get("/listings/:id", (async (req, res) => {
 //Create Route
 app.post("/listings",
 isLoggedIn,
-(async (req, res) => {
+validateListing,
+wrapAsync(async (req, res) => {
   const newListing = new Listing(req.body.listing);
+  newListing.owner = req.user._id;
   await newListing.save();
-  res.redirect("/listings")
-  //res.redirect("c:\\Users\\HP\\Desktop\\project\\NewProject\\views\\listings");
+  req.flash("success", "New Listing Created!");
+  res.redirect("/listings");
 })
 );
 
@@ -163,48 +214,63 @@ isLoggedIn,
 
 
 //Edit Route
-app.get("/listings/:id/edit", (async (req, res) => {
+app.get("/listings/:id/edit", isLoggedIn, isOwner, wrapAsync(async (req, res) => {
   let { id } = req.params;
   const listing = await Listing.findById(id);
+  if (!listing) {
+    req.flash("error", "Listing you requested for does not exist!");
+    res.redirect("/listings");
+  }
   res.render("listings/edit.ejs", { listing });
 }));
 
 //Update Route
-app.put("/listings/:id", (async (req, res) => {
+app.put("/listings/:id", isLoggedIn, isOwner, validateListing, wrapAsync(async (req, res) => {
   let { id } = req.params;
   await Listing.findByIdAndUpdate(id, { ...req.body.listing });
+  req.flash("success", "Listing Updated!");
   res.redirect(`/listings/${id}`);
 }));
 
 //Delete Route
-app.delete("/listings/:id", isLoggedIn, (async (req, res) => {
+app.delete("/listings/:id", isLoggedIn, isOwner, wrapAsync(async (req, res) => {
   let { id } = req.params;
   let deletedListing = await Listing.findByIdAndDelete(id);
   console.log(deletedListing);
+  req.flash("success", "Listing Deleted!");
   res.redirect("/listings");
-
 }));
 
 // review
 // post route
+app.post("/listings/:id/reviews", 
+isLoggedIn, 
+validateReview, 
+wrapAsync(async(req, res)=>{
+  let listing = await Listing.findById(req.params.id);
+  let newReview = new Review(req.body.review);
+  newReview.author = req.user._id;
 
-app.post("/listings/:id", async(req, res)=>{
-  let {id} = req.params;
-  let reviewsListing = await Listing.findById(id);
-  const newReview = new Review(req.body.review);
+  listing.reviews.push(newReview);
+
   await newReview.save();
-  res.redirect("/listings")
-  //let newReview = new Review (req.body.review);
+  await listing.save();
+  
+  req.flash("success", "New Review Created!");
+  res.redirect(`/listings/${listing._id}`);
+}));
 
-  //reviewsListing(newReview);
-
-  //Listing.reviews(newReview);
-  //await newReview.save();
-  //await listing.save();
-  console.log("new feedback save");
-  //res.send("new feedback save");
-
-});
+// Delete Review Route
+app.delete("/listings/:id/reviews/:reviewId", 
+isLoggedIn, 
+isReviewAuthor, 
+wrapAsync(async (req, res) => {
+    let { id, reviewId } = req.params;
+    await Listing.findByIdAndUpdate(id, { $pull: { reviews: reviewId } });
+    await Review.findByIdAndDelete(reviewId);
+    req.flash("success", "Review Deleted!");
+    res.redirect(`/listings/${id}`);
+}));
 
 
 // app.get("/testListing", async (req, res)=>{

@@ -129,6 +129,22 @@ footer {
 }
 
 /* Utilities */
+.bg-navy {
+    background-color: var(--navy) !important;
+}
+
+.bg-slate {
+    background-color: var(--slate) !important;
+}
+
+.text-gray {
+    color: var(--gray) !important;
+}
+
+.text-light {
+    color: var(--light) !important;
+}
+
 .section-title {
     font-size: 2.5rem;
     font-weight: 700;
@@ -139,4 +155,17 @@ footer {
 a.listing-link {
     text-decoration: none;
     color: inherit;
+}
+
+/* Form Styles */
+.form-control:focus {
+    background-color: var(--navy) !important;
+    color: var(--light) !important;
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 0.25rem rgba(233, 69, 96, 0.25) !important;
+}
+
+::placeholder {
+    color: var(--gray) !important;
+    opacity: 0.7;
 }

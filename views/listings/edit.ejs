@@ -6,7 +6,7 @@
             <div class="card bg-slate border-0 p-4 rounded-4 shadow">
                 <h3 class="text-light mb-4"><i class="fa-solid fa-pen-to-square me-2 text-primary"></i>Edit Property Listing</h3>
                 
-                <form method="POST" action="/listings/<%= listing._id %>?_method=PUT">
+                <form method="POST" action="/listings/<%= listing._id %>?_method=PUT" class="needs-validation" novalidate>
                     <div class="mb-4">
                         <label class="form-label text-gray">Property Title</label>
                         <input name="listing[title]" value="<%= listing.title %>" type="text" class="form-control bg-navy border-0 text-light py-2" required>

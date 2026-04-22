@@ -13,6 +13,9 @@
         <div class="col-lg-6">
             <div class="p-4 bg-slate rounded-4 shadow-sm h-100">
                 <h2 class="section-title text-start mb-2"><%= listing.title %></h2>
+                <p class="text-secondary mb-1">
+                    <i class="fa-solid fa-user me-2"></i>Owned by <i><%= listing.owner ? listing.owner.username : "Anonymous" %></i>
+                </p>
                 <p class="text-secondary mb-4">
                     <i class="fa-solid fa-location-dot me-2"></i><%= listing.location %>, <%= listing.country %>
                 </p>
@@ -26,6 +29,7 @@
                     <span class="text-secondary"> / night</span>
                 </div>
 
+                <% if(currUser && listing.owner && listing.owner._id.equals(currUser._id)) { %>
                 <div class="d-flex gap-3">
                     <a href="/listings/<%= listing._id %>/edit" class="btn btn-primary px-4">
                         <i class="fa-solid fa-pen-to-square me-2"></i>Edit Property
@@ -36,6 +40,7 @@
                         </button>
                     </form>
                 </div>
+                <% } %>
             </div>
         </div>
     </div>
@@ -43,9 +48,9 @@
     <!-- Feedback Section -->
     <div class="row mt-5">
         <div class="col-lg-8 offset-lg-2">
-            <div class="card bg-slate border-0 p-4 rounded-4">
+            <div class="card bg-slate border-0 p-4 rounded-4 mb-4">
                 <h4 class="text-light mb-4"><i class="fa-solid fa-star me-2 text-warning"></i>Leave a Review</h4>
-                <form action="/listings/<%= listing._id %>" method="POST">
+                <form action="/listings/<%= listing._id %>/reviews" method="POST">
                     <div class="mb-4">
                         <label class="form-label text-gray">Rating (1-5)</label>
                         <input type="range" min="1" max="5" name="review[rating]" class="form-range custom-range">
@@ -56,6 +61,41 @@
                     </div>
                     <button class="btn btn-primary">Post Review</button>
                 </form>
+            </div>
+
+            <hr class="border-secondary opacity-25 my-5">
+
+            <h4 class="text-light mb-4">All Reviews</h4>
+            <div class="row">
+                <% if(listing.reviews.length === 0) { %>
+                    <div class="col-12">
+                        <p class="text-secondary italic">No reviews yet. Be the first to leave one!</p>
+                    </div>
+                <% } %>
+                <% for(review of listing.reviews) { %>
+                    <div class="col-md-6 mb-4">
+                        <div class="card bg-navy border-0 p-3 rounded-4 shadow-sm h-100">
+                            <div class="card-body">
+                                <h6 class="card-title text-primary mb-1">@<%= review.author.username %></h6>
+                                <p class="text-warning mb-2">
+                                    <% for(let i=0; i<review.rating; i++) { %>
+                                        <i class="fa-solid fa-star"></i>
+                                    <% } %>
+                                    <% for(let i=review.rating; i<5; i++) { %>
+                                        <i class="fa-regular fa-star"></i>
+                                    <% } %>
+                                </p>
+                                <p class="card-text text-gray"><%= review.comment %></p>
+                                
+                                <% if(currUser && review.author._id.equals(currUser._id)) { %>
+                                <form method="POST" action="/listings/<%= listing._id %>/reviews/<%= review._id %>?_method=DELETE">
+                                    <button class="btn btn-sm btn-outline-danger mt-2">Delete</button>
+                                </form>
+                                <% } %>
+                            </div>
+                        </div>
+                    </div>
+                <% } %>
             </div>
         </div>
     </div>

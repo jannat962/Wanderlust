@@ -1,18 +1,6 @@
 (() => {
     'use strict'
     
-    // Bootstrap validation logic
-    const forms = document.querySelectorAll('.needs-validation');
-    Array.from(forms).forEach((form) => {
-        form.addEventListener('submit', (event) => {
-            if (!form.checkValidity()) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
-            form.classList.add("was-validated");
-        }, false);
-    });
-
     // --- Voice Assistant Logic ---
     const startBtn = document.querySelector("#start");
     const stopBtn = document.querySelector("#stop");
@@ -31,6 +19,7 @@
 
         recognition.onstart = () => {
             console.log("Voice Assistant: Active");
+            sessionStorage.setItem("voice_assistant_active", "true");
             if(startBtn) startBtn.classList.add("d-none");
             if(stopBtn) stopBtn.classList.remove("d-none");
             if(statusBadge) {
@@ -38,7 +27,10 @@
                 statusBadge.innerText = "System Listening...";
                 statusBadge.classList.add("bg-danger");
             }
-            readOut("Wanderlust Assistant active. Listening for commands.");
+            // Only speak on manual start, not auto-start during navigation
+            if(!window.isAutoStarting) {
+                readOut("Welcome to Wanderlust! How can I help you today? Would you like me to tell you my features?");
+            }
         };
 
         recognition.onend = () => {
@@ -52,14 +44,22 @@
 
         if(startBtn) {
             startBtn.addEventListener("click", () => {
+                window.isAutoStarting = false;
                 recognition.start();
             });
         }
 
         if(stopBtn) {
             stopBtn.addEventListener("click", () => {
+                sessionStorage.removeItem("voice_assistant_active");
                 recognition.stop();
             });
+        }
+
+        // Auto-start if it was active on previous page
+        if (sessionStorage.getItem("voice_assistant_active") === "true") {
+            window.isAutoStarting = true;
+            recognition.start();
         }
 
         recognition.onresult = (event) => {
@@ -74,30 +74,49 @@
                 }, 1200);
             };
 
-            // Enhanced Command Patterns
-            if (transcript.includes("listings") || transcript.includes("list") || transcript.includes("home")) {
-                navigateTo("/listings", "Opening all listings.");
+            // --- Enhanced Command Patterns ---
+            
+            // 1. Navigation Commands
+            if (transcript.includes("home page") || transcript.includes("open home") || transcript.includes("go home")) {
+                navigateTo("/listings", "Opening the home page.");
             }
-            else if (transcript.includes("add new") || transcript.includes("create") || transcript.includes("new property") || transcript.includes("new list")) {
-                navigateTo("/listings/new", "Opening property form.");
+            else if (transcript.includes("dashboard") || transcript.includes("my properties") || transcript.includes("admin panel")) {
+                navigateTo("/dashboard", "Taking you to your dashboard.");
             }
-            else if (transcript.includes("login") || transcript.includes("sign in")) {
-                navigateTo("/login", "Opening login.");
+            else if (transcript.includes("add new listing") || transcript.includes("create listing") || transcript.includes("new property")) {
+                navigateTo("/listings/new", "Opening the property creation form.");
             }
-            else if (transcript.includes("signup") || transcript.includes("register") || transcript.includes("sign up")) {
+            else if (transcript.includes("sign up") || transcript.includes("register")) {
                 navigateTo("/signup", "Opening registration.");
             }
-            else if (transcript.includes("logout") || transcript.includes("sign out")) {
-                navigateTo("/logout", "Logging out.");
+            else if (transcript.includes("sign in") || transcript.includes("login")) {
+                navigateTo("/login", "Opening login.");
+            }
+            
+            // 2. Action Commands
+            else if (transcript === "add" || transcript === "submit" || transcript === "save") {
+                const addBtn = document.querySelector(".add-btn") || document.querySelector("button[type='submit']");
+                if (addBtn) {
+                    readOut("Submitting the form.");
+                    addBtn.click();
+                } else {
+                    readOut("I couldn't find a submit button on this page.");
+                }
+            }
+            
+            // 3. Information / Conversational
+            else if (transcript.includes("yes") || transcript.includes("tell me your features") || transcript.includes("what can you do") || transcript.includes("features")) {
+                readOut("I can help you navigate Wanderlust. You can say: Open home page, Go to dashboard, Add new listing, or Login. I can also submit forms for you when you say 'Add'.");
+            }
+            else if (transcript.includes("nearest hotel") || transcript.includes("comfortable hotel") || transcript.includes("recommendation")) {
+                readOut("I've found some highly-rated luxury stays in Tokyo and New York. Would you like to see all listings?");
             }
             else if (transcript.includes("hello") || transcript.includes("hi")) {
-                readOut("Assalamu Alaikum! Tell me a command like 'Open listings'.");
+                readOut("Hi there! How can I assist you with your travels today?");
             }
-            else if (transcript.includes("about") || transcript.includes("yourself")) {
-                readOut("I am your Wanderlust voice assistant. I can navigate the site for you.");
-            }
-            else if (transcript.includes("stop") || transcript.includes("shut down") || transcript.includes("exit")) {
-                readOut("Stopping system.");
+            else if (transcript.includes("stop") || transcript.includes("exit")) {
+                readOut("Goodbye! Voice assistant stopping.");
+                sessionStorage.removeItem("voice_assistant_active");
                 recognition.stop();
             }
         };
